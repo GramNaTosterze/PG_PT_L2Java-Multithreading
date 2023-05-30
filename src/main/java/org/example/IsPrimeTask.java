@@ -1,37 +1,61 @@
 package org.example;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Stack;
 
 public class IsPrimeTask implements Runnable{
-    private Stack<Integer> source;
+    private Stack<Long> source;
     private int currThread;
     private boolean end;
-    private HashMap<Integer, Boolean> storage;
-    public static boolean IsPrimary(int num) {
-        for(int i = 2; i < num; i++) {
+    private File storage;
+    public static Set<Long> IsPrimary(Long num) {
+        Set<Long> ret = new HashSet<>();
+        for(Long i = 1L; i <= num; i++) {
             if(num % i == 0)
-                return false;
+                ret.add(i);
+
         }
-        return true;
+        return ret;
     }
-    public IsPrimeTask(Stack<Integer> _source, HashMap<Integer, Boolean> _storage) {
-        source = _source;
+    public IsPrimeTask(Stack<Long> _source, File _storage) {
+        source  = _source;
         storage = _storage;
+        end     = false;
     }
     public void run() {
-        int num = source.pop();
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        while(source.empty()) {
+            //wait
+            if (end)
+                return;
         }
 
+
+        Long num;
+        synchronized (source) {
+            num = source.pop();
+        }
+
+        Set<Long> d = new HashSet<>();
         synchronized(storage) {
-            storage.put(num, IsPrimary(num));
+            try {
+                FileWriter writer = new FileWriter(storage, true);
+                d = IsPrimary(num);
+                writer.write("liczba " + num + ": " + d + "\n");
+                writer.close();
+            } catch(IOException e) {
+                System.out.println("coś z plikiem zapisu");
+            }
         }
-        System.out.println("\nThread: " + Thread.currentThread().threadId() + " " + num + "->" + storage.get(num));
+        System.out.println("\nThread: " + Thread.currentThread().threadId() + " " + num + "->" + (d.size() == 2));
 
-        if(!source.empty()) run();
+        run();
+    }
+    public void endTask() {
+        end = true;
     }
 }

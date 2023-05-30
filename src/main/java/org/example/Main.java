@@ -1,37 +1,44 @@
 package org.example;
 
-import java.util.HashMap;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
 import java.util.Stack;
 
 public class Main {
     public static void main(String[] args) {
-        int[] source = {6007,	6011,	6029,	6037,	6043,	6047,	6053,	6067,	6073,	6079,	6089,	6091,	6101,	6113,	6121,	6131,	6133};
-        Stack<Integer> sharedSource = new Stack<>();
-        //shared hashmap
-        HashMap<Integer, Boolean> sharedStorage = new HashMap<Integer, Boolean>();
-        for (int s : source)
-            sharedSource.add(s);
-
-
+        Stack<Long> sharedSource = ReadFile();
+        File sharedStorage = new File("storage.txt");
+        try {
+            sharedStorage.createNewFile();
+            FileWriter writer = new FileWriter(sharedStorage);
+            writer.write("");
+        } catch(IOException e) {
+            System.out.println("problem z tworzeniem pliku");
+        }
 
         //create threads
         int numOfThreads = 4;
-        Thread[] threads = new Thread[numOfThreads];
+        if(args.length >= 1)
+            numOfThreads = Integer.parseInt(args[0]);
 
-        ThreadController controller = new ThreadController(threads, sharedSource, sharedStorage);
+        ThreadController controller = new ThreadController(numOfThreads, sharedSource, sharedStorage);
         Thread mainThread = new Thread(controller);
         mainThread.start();
-
-        for(int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread(new IsPrimeTask(sharedSource, sharedStorage));
-            threads[i].start();
-        }
-
-        while(!sharedSource.empty() && threads != null) {
-            //slowdown
-        }
-        System.out.println(sharedStorage);
-        controller.stop();
     }
-
+    public static Stack<Long> ReadFile() {
+        Stack<Long> numbers = new Stack<>();
+        try {
+            File file = new File("liczby.txt");
+            Scanner reader = new Scanner(file);
+            while(reader.hasNextLine()) {
+                numbers.add(Long.parseLong(reader.nextLine()));
+            }
+        } catch (FileNotFoundException e){
+            System.out.println("brak pliku");
+        }
+        return numbers;
+    }
 }
